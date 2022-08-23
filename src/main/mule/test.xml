@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="bfe79060-74a2-415b-8b2e-bc1e220b384c" >
+		<http:listener-connection host="localhost" port="8082" />
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="411905c4-4098-4ec0-9b5e-019936d27403" >
+		<wsc:connection wsdlLocation="http://www.dneonline.com/calculator.asmx?wsdl" service="Calculator" port="CalculatorSoap" address="http://www.dneonline.com/calculator.asmx" >
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
+	</wsc:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="d944b592-dbdc-4e0b-bb05-a902267889c7" file="prpts.yaml" />
+	<file:config name="File_Config" doc:name="File Config" doc:id="d6152b3e-22ad-45cf-8cc0-0590e9247f51" />
+	<flow name="testFlow" doc:id="f485ba1e-f49a-4cd6-ba6c-961814d098fe" >
+		<http:listener doc:name="GET /test" doc:id="ef04edcd-8450-438b-abfc-b94eae16817e" config-ref="HTTP_Listener_config" path="/test"/>
+		<choice doc:name="Choice" doc:id="5acc8a16-3526-4488-85a9-31d1dc4adcb0" >
+			<when expression='#[attributes.queryParams.choice == "1"]'>
+				<ee:transform doc:name="Transform Message" doc:id="30cc4227-245b-4b2b-9b04-33919a632e0e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"1) Anil"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression='#[attributes.queryParams.choice == "2"]'>
+				<ee:transform doc:name="Transform Message" doc:id="96b01c88-51df-47bb-92cf-92b5cd7b0cc9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"2) Madhu"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression='#[attributes.queryParams.choice == "3"]'>
+				<ee:transform doc:name="Transform Message" doc:id="b61228fc-ce40-4c3d-bdca-b73a1dbabdb4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"3) Asha"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression='attributes.queryParams.choice =="3"'>
+				<ee:transform doc:name="Transform Message" doc:id="d7918c57-8114-478c-8ec4-49fbe639007a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+" 4) Pavan"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<raise-error doc:name="Raise error" doc:id="553e1046-4e18-49b2-81e3-b42a2827112f" type="CUSTOM:INPUT_ERROR" description="Selected Choice is wrong. Please choose in 1,2,3,4."/>
+			</otherwise>
+		</choice>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="3499faf4-0143-4364-a56d-2638936712bf" >
+				<ee:transform doc:name="Transform Message" doc:id="5b253213-3a7b-400a-8f6a-1bf164cbdfe8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error.description]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="testFlow1" doc:id="13cdbe8b-544a-47fe-bfe4-abeb4696fb69" >
+		<http:listener doc:name="GET /C2X" doc:id="80114ee4-8bb6-476e-a245-26e56dc06ea8" config-ref="HTTP_Listener_config" path="/C2X" allowedMethods="GET"/>
+		<file:read doc:name="bulkInsert.csv" doc:id="e74975fa-5587-4c02-a0bb-578979b0d775" config-ref="File_Config" path="C:\Users\kpavankumar\Downloads\bulkInsert.csv"/>
+		<ee:transform doc:name="/java payload" doc:id="33e28839-e221-4010-8b33-d9983e481282">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+Employees: payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+	</flow>
+</mule>
